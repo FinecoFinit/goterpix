@@ -19,3 +19,4 @@
 
     - Only gif images are usable at the moment
     - Image should be perfect 1 to 1 pixels 
+    - Frame drawing depends on your terminal performance 
