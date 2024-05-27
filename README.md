@@ -1,4 +1,4 @@
-<img align="left" width="30%" src="pictures/summer_Illumine_prev.gif">
+<img align="left" width="50%" src="pictures/summer_Illumine_prev.gif">
 
 <p align="center">GoTerPix</p>
 <p align="center">Pixel art images right into your terminal!</p>
