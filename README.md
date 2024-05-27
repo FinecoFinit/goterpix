@@ -1,20 +1,21 @@
-<p align="center" width="100%">
-    <img width="40%" src="pictures/summer_Illumine_prev.gif"> 
-</p>
+<img align="left" width="30%" src="pictures/summer_Illumine_prev.gif">
 
-<p align="center" style="font-size: 2rem;">GoTerPix</p>
-<p align="center" style="font-size: 1.5rem;">Pixel art images right into your terminal!</p>
+<p align="center">GoTerPix</p>
+<p align="center">Pixel art images right into your terminal!</p>
 
-# Build
+`Build`  
+
     git clone https://github.com/FinecoFinit/goterpix.git
     cd goterpix
     go build goterpix.go
 
-# Usage
+`Usage`  
+
     ./goterpix summer_Illumine.gif 60
 
 goterpix | path to gif image | frame delay in milliseconds
 
-## Limitations
+
+`Limitations`  
 - Only gif images are usable at the moment
 - Image should be perfect 1 to 1 pixels 
