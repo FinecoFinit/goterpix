@@ -1,5 +1,5 @@
 <p align="center" width="100%">
-    <img width="40%" style="image-rendering: optimizeSpeed;image-rendering: -moz-crisp-edges;image-rendering: -o-crisp-edges;image-rendering: -webkit-optimize-contrast;image-rendering: pixelated;image-rendering: optimize-contrast;" src="summer_Illumine.gif"> 
+    <img width="40%" src="pictures/summer_Illumine_prev.gif"> 
 </p>
 
 <p align="center" style="font-size: 2rem;">GoTerPix</p>
