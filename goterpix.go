@@ -75,9 +75,12 @@ func main() {
 			}
 			frames[f] += "\n"
 		}
+	}
+	// Draw magic
+	for i := 0; i < len(frames); i++ {
 		time.Sleep(time.Duration(delay) * time.Millisecond)
 		CallClear()
-		print(frames[f])
+		print(frames[i])
 	}
 }
 
