@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"golang.org/x/term"
+	"image"
 	"image/gif"
 	"os"
 	"os/exec"
@@ -15,18 +15,30 @@ type Pixel struct {
 	R, G, B, A int
 }
 
+type Tab struct {
+	Up Pixel
+	Dn Pixel
+}
+
+type TabsRow struct {
+	Tabs []Tab
+}
+
+type Frame struct {
+	TabsRows []TabsRow
+}
+
+type Frames struct {
+	Frames []string
+}
+
 var clearscr map[string]func()
 
 func main() {
-	var (
-		backVT, foreVT string
-		back, fore     Pixel
-	)
-	// Args
 	path := os.Args[1]
 	delayArg := os.Args[2]
 	delay, _ := strconv.Atoi(delayArg)
-	// Commands for terminal clean
+
 	clearscr = make(map[string]func()) //Initialize it
 	clearscr["linux"] = func() {
 		cmd := exec.Command("clear") //Linux example, its tested
@@ -44,7 +56,7 @@ func main() {
 			panic(err)
 		}
 	}
-	// Input file
+
 	inputFile, err := os.Open(path)
 	if err != nil {
 		panic(err)
@@ -59,58 +71,79 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	// Declaring types and sizes
-	HeightStart, WidthStart := 0, 0
-	Width, Height := g.Config.Width, g.Config.Height
-	frames := make([]string, len(g.Image))
-	terX, terY, err := term.GetSize(0)
-	if err != nil {
-		panic(err)
+
+	//HeightStart, WidthStart := 0, 0
+	//Width, Height := g.Config.Width, g.Config.Height
+	//fd := int(os.Stdout.Fd())
+	//terX, terY, err := terminal.GetSize(fd)
+	//if err != nil {
+	//	panic(err)
+	//}
+
+	//if terY*2 < Height {
+	//	HeightStart = (Height - terY*2) / 2
+	//	Height = Height - ((Height - terY*2) / 2)
+	//}
+	//if terX < Width {
+	//	WidthStart = (Width - terX) / 2
+	//	Width = Width - ((Width - terX) / 2)
+	//}
+
+	var frames Frames
+
+	for _, f := range g.Image {
+		frames.Frames = append(frames.Frames, BuildAnsi(BuildRows(f)))
 	}
-	// Set size
-	if terY*2 < Height {
-		HeightStart = (Height - terY*2) / 2
-		Height = Height - ((Height - terY*2) / 2)
-	}
-	if terX < Width {
-		WidthStart = (Width - terX) / 2
-		Width = Width - ((Width - terX) / 2)
-	}
-	// Magic
-	for f := 0; f < len(g.Image); f++ {
-		for y := HeightStart; y < Height; y += 2 {
-			for x := WidthStart; x < Width; x += 1 {
-				// Symbol structure in ANSI escape code, back is upper half and fore is bottom half
-				back = rgbaToPixel(g.Image[f].RGBA64At(x, y).RGBA())
-				fore = rgbaToPixel(g.Image[f].RGBA64At(x, y+1).RGBA())
-				backVT = fmt.Sprint("\033[48;2;", back.R, ";", back.G, ";", back.B, "m")
-				foreVT = fmt.Sprint("\033[38;2;", fore.R, ";", fore.G, ";", fore.B, "m")
-				if fore.A == 0 && back.A == 0 {
-					frames[f] += " "
-				}
-				if fore.A == 0 && back.A > 0 {
-					backVT = fmt.Sprint("\033", "[38;2;", back.R, ";", back.G, ";", back.B, "m")
-					frames[f] += fmt.Sprint(backVT, "▀\033[0m")
-				}
-				if fore.A > 0 && back.A == 0 {
-					frames[f] += fmt.Sprint(foreVT, "▄\033[0m")
-				}
-				if fore.A > 0 && back.A > 0 {
-					frames[f] += fmt.Sprint(backVT, foreVT, "▄\033[0m")
-				}
-			}
-			frames[f] += "\n"
-		}
-	}
-	for i := 0; i < len(frames); i++ {
-		time.Sleep(time.Duration(delay) * time.Millisecond)
+	for _, frame := range frames.Frames {
 		CallClear()
-		print(frames[i])
+		print(frame)
+		time.Sleep(time.Duration(delay) * time.Millisecond)
 	}
 }
-func rgbaToPixel(r uint32, g uint32, b uint32, a uint32) Pixel {
+
+func BuildRows(f *image.Paletted) Frame {
+	var frame Frame
+	for pr := 0; pr < f.Rect.Dy(); pr += 2 {
+		var TabsRow TabsRow
+		for p := 0; p < f.Rect.Dx(); p++ {
+			var Tab Tab
+			Tab.Up = RgbaToPixel(f.At(p, pr).RGBA())
+			Tab.Dn = RgbaToPixel(f.At(p, pr+1).RGBA())
+			TabsRow.Tabs = append(TabsRow.Tabs, Tab)
+		}
+		frame.TabsRows = append(frame.TabsRows, TabsRow)
+	}
+	return frame
+}
+
+func BuildAnsi(f Frame) string {
+	var fr string
+	for _, tr := range f.TabsRows {
+		for _, tab := range tr.Tabs {
+			switch {
+			case tab.Up.A == 0 && tab.Dn.A == 0:
+				fr += " "
+			case tab.Up.A > 0 && tab.Dn.A == 0:
+				UP := fmt.Sprint("\033[38;2;", tab.Up.R, ";", tab.Up.G, ";", tab.Up.B, "m")
+				fr += fmt.Sprint(UP, "▀\033[0m")
+			case tab.Up.A == 0 && tab.Dn.A > 0:
+				DN := fmt.Sprint("\033[38;2;", tab.Dn.R, ";", tab.Dn.G, ";", tab.Dn.B, "m")
+				fr += fmt.Sprint(DN, "▄\033[0m")
+			case tab.Up.A > 0 && tab.Dn.A > 0:
+				UP := fmt.Sprint("\033[48;2;", tab.Up.R, ";", tab.Up.G, ";", tab.Up.B, "m")
+				DN := fmt.Sprint("\033[38;2;", tab.Dn.R, ";", tab.Dn.G, ";", tab.Dn.B, "m")
+				fr += fmt.Sprint(UP, DN, "▄\033[0m")
+			}
+		}
+		fr += "\n"
+	}
+	return fr
+}
+
+func RgbaToPixel(r uint32, g uint32, b uint32, a uint32) Pixel {
 	return Pixel{int(r / 257), int(g / 257), int(b / 257), int(a / 257)}
 }
+
 func CallClear() {
 	value, ok := clearscr[runtime.GOOS]
 	if ok {
