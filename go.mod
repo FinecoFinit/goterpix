@@ -1,3 +1,5 @@
 module goterpix
 
-go 1.23.5
+go 1.24
+
+require atomicgo.dev/cursor v0.2.0
