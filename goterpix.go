@@ -1,6 +1,7 @@
 package main
 
 import (
+	"atomicgo.dev/cursor"
 	"fmt"
 	"image"
 	"image/gif"
@@ -29,18 +30,18 @@ type Frame struct {
 }
 
 type Frames struct {
-	Frames []string
+	Frames [][]string
 }
 
-var clearscr map[string]func()
+var ClearScr map[string]func()
 
 func main() {
 	path := os.Args[1]
 	delayArg := os.Args[2]
 	delay, _ := strconv.Atoi(delayArg)
 
-	clearscr = make(map[string]func()) //Initialize it
-	clearscr["linux"] = func() {
+	ClearScr = make(map[string]func()) //Initialize it
+	ClearScr["linux"] = func() {
 		cmd := exec.Command("clear") //Linux example, its tested
 		cmd.Stdout = os.Stdout
 		err := cmd.Run()
@@ -48,7 +49,7 @@ func main() {
 			panic(err)
 		}
 	}
-	clearscr["windows"] = func() {
+	ClearScr["windows"] = func() {
 		cmd := exec.Command("cmd", "/c", "cls") //Windows example, its tested
 		cmd.Stdout = os.Stdout
 		err := cmd.Run()
@@ -94,11 +95,15 @@ func main() {
 	for _, f := range g.Image {
 		frames.Frames = append(frames.Frames, BuildAnsi(BuildRows(f)))
 	}
+	cursor.Hide()
 	for _, frame := range frames.Frames {
 		CallClear()
-		print(frame)
+		for _, t := range frame {
+			print(t)
+		}
 		time.Sleep(time.Duration(delay) * time.Millisecond)
 	}
+	cursor.Show()
 }
 
 func BuildRows(f *image.Paletted) Frame {
@@ -116,26 +121,28 @@ func BuildRows(f *image.Paletted) Frame {
 	return frame
 }
 
-func BuildAnsi(f Frame) string {
-	var fr string
+func BuildAnsi(f Frame) []string {
+	var fr []string
 	for _, tr := range f.TabsRows {
+		var tempRow string
 		for _, tab := range tr.Tabs {
 			switch {
 			case tab.Up.A == 0 && tab.Dn.A == 0:
-				fr += " "
+				tempRow += " "
 			case tab.Up.A > 0 && tab.Dn.A == 0:
 				UP := fmt.Sprint("\033[38;2;", tab.Up.R, ";", tab.Up.G, ";", tab.Up.B, "m")
-				fr += fmt.Sprint(UP, "▀\033[0m")
+				tempRow += fmt.Sprint(UP, "▀\033[0m")
 			case tab.Up.A == 0 && tab.Dn.A > 0:
 				DN := fmt.Sprint("\033[38;2;", tab.Dn.R, ";", tab.Dn.G, ";", tab.Dn.B, "m")
-				fr += fmt.Sprint(DN, "▄\033[0m")
+				tempRow += fmt.Sprint(DN, "▄\033[0m")
 			case tab.Up.A > 0 && tab.Dn.A > 0:
 				UP := fmt.Sprint("\033[48;2;", tab.Up.R, ";", tab.Up.G, ";", tab.Up.B, "m")
 				DN := fmt.Sprint("\033[38;2;", tab.Dn.R, ";", tab.Dn.G, ";", tab.Dn.B, "m")
-				fr += fmt.Sprint(UP, DN, "▄\033[0m")
+				tempRow += fmt.Sprint(UP, DN, "▄\033[0m")
 			}
 		}
-		fr += "\n"
+		tempRow += "\n"
+		fr = append(fr, tempRow)
 	}
 	return fr
 }
@@ -145,7 +152,7 @@ func RgbaToPixel(r uint32, g uint32, b uint32, a uint32) Pixel {
 }
 
 func CallClear() {
-	value, ok := clearscr[runtime.GOOS]
+	value, ok := ClearScr[runtime.GOOS]
 	if ok {
 		value()
 	} else {
