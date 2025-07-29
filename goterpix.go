@@ -30,7 +30,7 @@ type Frame struct {
 }
 
 type Frames struct {
-	Frames [][]string
+	Frames []string
 }
 
 var ClearScr map[string]func()
@@ -98,8 +98,9 @@ func main() {
 	cursor.Hide()
 	for _, frame := range frames.Frames {
 		CallClear()
-		for _, t := range frame {
-			print(t)
+		_, err = os.Stdout.Write([]byte(frame))
+		if err != nil {
+			fmt.Println(err)
 		}
 		time.Sleep(time.Duration(delay) * time.Millisecond)
 	}
@@ -121,8 +122,8 @@ func BuildRows(f *image.Paletted) Frame {
 	return frame
 }
 
-func BuildAnsi(f Frame) []string {
-	var fr []string
+func BuildAnsi(f Frame) string {
+	var fr string
 	for _, tr := range f.TabsRows {
 		var tempRow string
 		for _, tab := range tr.Tabs {
@@ -142,7 +143,7 @@ func BuildAnsi(f Frame) []string {
 			}
 		}
 		tempRow += "\n"
-		fr = append(fr, tempRow)
+		fr += tempRow
 	}
 	return fr
 }
