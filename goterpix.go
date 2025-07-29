@@ -49,6 +49,14 @@ func main() {
 			panic(err)
 		}
 	}
+	ClearScr["darwin"] = func() {
+		cmd := exec.Command("clear") //Linux example, its tested
+		cmd.Stdout = os.Stdout
+		err := cmd.Run()
+		if err != nil {
+			panic(err)
+		}
+	}
 	ClearScr["windows"] = func() {
 		cmd := exec.Command("cmd", "/c", "cls") //Windows example, its tested
 		cmd.Stdout = os.Stdout
